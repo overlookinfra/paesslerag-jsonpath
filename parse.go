@@ -5,7 +5,7 @@ import (
 	"math"
 	"text/scanner"
 
-	"github.com/PaesslerAG/gval"
+	"github.com/puppetlabs/paesslerag-gval"
 )
 
 // Parse parses the complete JSON path starting from the given parser location.

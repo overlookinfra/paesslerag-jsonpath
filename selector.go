@@ -3,7 +3,7 @@ package jsonpath
 import (
 	"context"
 
-	"github.com/PaesslerAG/gval"
+	"github.com/puppetlabs/paesslerag-gval"
 )
 
 type selector func(context.Context, interface{}) (values, error)

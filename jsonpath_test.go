@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/PaesslerAG/gval"
-	"github.com/PaesslerAG/jsonpath"
+	"github.com/puppetlabs/paesslerag-gval"
+	"github.com/puppetlabs/paesslerag-jsonpath"
 )
 
 type jsonpathTest struct {

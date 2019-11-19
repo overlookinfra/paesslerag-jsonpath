@@ -13,9 +13,11 @@ package jsonpath
 
 import (
 	"context"
+	"fmt"
+	"text/scanner"
 
-	"github.com/PaesslerAG/gval"
 	"github.com/generikvault/gvalstrings"
+	gval "github.com/puppetlabs/paesslerag-gval"
 )
 
 // New returns an selector for given JSONPath
@@ -48,7 +50,13 @@ func AllowMissingKeys(allow bool) Option {
 func Language(opts ...Option) gval.Language {
 	return gval.NewLanguage(
 		gval.Base(),
-		gvalstrings.SingleQuoted(),
+		gval.PrefixExtension(scanner.Char, func(c context.Context, p *gval.Parser) (gval.Evaluable, error) {
+			s, err := gvalstrings.UnquoteSingleQuoted(p.TokenText())
+			if err != nil {
+				return nil, fmt.Errorf("could not parse string: %v", err)
+			}
+			return p.Const(s), nil
+		}),
 		gval.PrefixExtension('$', parseRootPath(opts)),
 		gval.PrefixExtension('@', parseCurrentPath(opts)),
 		gval.VariableSelector(VariableSelector(VariableVisitorFuncs{})),

@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/PaesslerAG/gval"
+	"github.com/puppetlabs/paesslerag-gval"
 )
 
 type variableWildcard struct{}

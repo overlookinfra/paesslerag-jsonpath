@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/PaesslerAG/gval"
-	"github.com/PaesslerAG/jsonpath"
+	"github.com/puppetlabs/paesslerag-gval"
+	"github.com/puppetlabs/paesslerag-jsonpath"
 )
 
 func ExampleGet() {
