@@ -29,6 +29,8 @@ func varSelector(variable gval.Evaluable) selector {
 		r, err := variable(currentContext(c, v), v)
 		if err != nil {
 			return nil, err
+		} else if r == nil {
+			return empty{}, nil
 		}
 
 		vs, ok := r.(values)

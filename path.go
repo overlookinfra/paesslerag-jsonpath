@@ -65,6 +65,20 @@ func (v value) prefix(children values) values {
 	return vs
 }
 
+type empty struct{}
+
+var _ values = empty{}
+
+func (empty) get() interface{} {
+	return nil
+}
+
+func (empty) concat(dest *values) {}
+
+func (e empty) flatMap(fn func(value) (values, error)) (values, error) {
+	return e, nil
+}
+
 type valueSlice []value
 
 var _ values = valueSlice{}
