@@ -2,7 +2,6 @@ package jsonpath
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"text/scanner"
 
@@ -108,15 +107,15 @@ func (p *parser) parseBracket(c context.Context, mapper bool) error {
 	switch seperator {
 	case ':':
 		if mapper {
-			return fmt.Errorf("mapper can not be combined with range query")
+			return ErrMapperNotCombinable
 		} else if len(keys) > 3 {
-			return fmt.Errorf("range query has at least the parameter [min:max:step]")
+			return ErrRangeQueryOutOfBounds
 		}
 		keys = append(keys, []gval.Evaluable{p.Const(0), p.Const(float64(math.MaxInt32)), p.Const(1)}[len(keys):]...)
 		p.appendSelector(varSelector(p.variableRange(keys[0], keys[1], keys[2])), selectorDropErrors)
 	case '?':
 		if len(keys) != 1 {
-			return fmt.Errorf("filter needs exactly one key")
+			return ErrFilterOutOfBounds
 		}
 		p.appendSelector(filterSelector(varSelector(p.variableWildcard()), keys[0]), selectorDropErrors)
 	case '*':
@@ -129,7 +128,7 @@ func (p *parser) parseBracket(c context.Context, mapper bool) error {
 		p.appendSelector(multiSelector(selectors), selectorDropErrors)
 	default:
 		if len(keys) != 1 {
-			return fmt.Errorf("unexpected separator %q", seperator)
+			return &UnexpectedSeparatorError{Separator: seperator}
 		}
 		p.appendSelector(varSelector(p.variableChild(keys[0])), selectorKeepErrors)
 	}
@@ -187,7 +186,7 @@ func (p *parser) scanBracket(c context.Context) (keys []gval.Evaluable, seperato
 			return nil, 0, p.Expected("JSON bracket separator", ':', ',')
 		}
 		if seperator != scan {
-			return nil, 0, fmt.Errorf("mixed %v and %v in JSON bracket", seperator, scan)
+			return nil, 0, &MixedSeparatorError{A: seperator, B: scan}
 		}
 	}
 }

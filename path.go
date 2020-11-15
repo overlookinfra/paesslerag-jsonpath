@@ -162,8 +162,8 @@ func (p *path) reduce(c context.Context, parameter interface{}) (values, error) 
 
 		return vs.flatMap(func(v value) (values, error) {
 			nvs, err := sel.fn(c, v.value)
-			if ferr, ok := err.(*ForcePropagation); ok {
-				return nil, ferr.Cause
+			if perr, ok := err.(PropagatableError); ok && perr.Propagate() {
+				return nil, perr
 			} else if err != nil {
 				if mode == selectorDropErrors {
 					return nil, nil

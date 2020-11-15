@@ -2,10 +2,8 @@ package jsonpath
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"strconv"
-	"strings"
 
 	"github.com/PaesslerAG/gval"
 )
@@ -54,13 +52,13 @@ func (vf VariableVisitorFuncs) VisitWildcard(c context.Context, v interface{}, n
 	case []interface{}:
 		for i := range vt {
 			if err := vf.VisitChild(c, v, i, appender); err != nil {
-				return fmt.Errorf("could not parse index %d: %v", i, err)
+				return &IndexParseError{Index: i, Cause: err}
 			}
 		}
 	case map[string]interface{}:
 		for k := range vt {
 			if err := vf.VisitChild(c, v, k, appender); err != nil {
-				return fmt.Errorf("could not parse key %q: %v", k, err)
+				return &KeyParseError{Key: k, Cause: err}
 			}
 		}
 	}
@@ -88,7 +86,7 @@ func (vf VariableVisitorFuncs) VisitRecursiveDescent(c context.Context, v interf
 
 				items = append(items, item)
 				if err := vf.VisitWildcard(c, v.Value, appender(item.Path...)); err != nil {
-					return fmt.Errorf("error resolving path %q: %v", strings.Join(v.Path, "."), err)
+					return &PathResolutionError{Path: v.Path, Cause: err}
 				}
 			}
 
@@ -135,13 +133,13 @@ func (vf VariableVisitorFuncs) VisitRange(c context.Context, v interface{}, min,
 	if step > 0 {
 		for i := min; i < max; i += step {
 			if err := vf.VisitChild(c, v, i, appender); err != nil {
-				return fmt.Errorf("could not parse index %d: %v", i, err)
+				return &IndexParseError{Index: i, Cause: err}
 			}
 		}
 	} else {
 		for i := max - 1; i >= min; i += step {
 			if err := vf.VisitChild(c, v, i, appender); err != nil {
-				return fmt.Errorf("could not parse index %d: %v", i, err)
+				return &IndexParseError{Index: i, Cause: err}
 			}
 		}
 	}
@@ -175,7 +173,7 @@ func (vf VariableVisitorFuncs) VisitChild(c context.Context, v interface{}, key 
 		case string:
 			ki, err := strconv.ParseInt(kt, 10, 32)
 			if err != nil {
-				return fmt.Errorf("unexpected string index %q for slice, must be convertible to int: %v", kt, err)
+				return &UnexpectedStringIndexError{RawIndex: kt, Cause: err}
 			}
 
 			i = int(ki)
@@ -186,11 +184,11 @@ func (vf VariableVisitorFuncs) VisitChild(c context.Context, v interface{}, key 
 		case float32, float64:
 			i = int(reflect.ValueOf(kt).Float())
 		default:
-			return fmt.Errorf("unexpected index type %T for slice", kt)
+			return &UnexpectedIndexTypeError{RawIndex: kt}
 		}
 
 		if i < 0 || i >= len(vt) {
-			return fmt.Errorf("index %d out of bounds", i)
+			return &IndexOutOfBoundsError{Index: i}
 		}
 
 		kv.Path = []string{strconv.Itoa(i)}
@@ -207,18 +205,18 @@ func (vf VariableVisitorFuncs) VisitChild(c context.Context, v interface{}, key 
 		case float32, float64:
 			k = strconv.FormatFloat(reflect.ValueOf(kt).Float(), 'f', -1, 64)
 		default:
-			return fmt.Errorf("unexpected key type %T for map", kt)
+			return &UnexpectedKeyTypeError{RawKey: kt}
 		}
 
 		r, ok := vt[k]
 		if !ok {
-			return fmt.Errorf("unknown key %s", k)
+			return &UnknownKeyError{Key: k}
 		}
 
 		kv.Path = []string{k}
 		kv.Value = r
 	default:
-		return fmt.Errorf("unsupported value type %T for select, expected map[string]interface{} or []interface{}", v)
+		return &UnsupportedValueTypeError{Value: vt}
 	}
 
 	return next(c, kv)
@@ -276,7 +274,7 @@ func VariableSelector(visitor VariableVisitor) func(path gval.Evaluables) gval.E
 						return combine(c, value{wildcards: [][]string{pv.Path}, value: pv.Value})
 					})
 				default:
-					err = &ForcePropagation{Cause: fmt.Errorf("unknown variable type %T", t)}
+					err = &UnknownVariableTypeError{Variable: t}
 				}
 				return r, err == nil, err
 			}

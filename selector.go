@@ -2,7 +2,6 @@ package jsonpath
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/PaesslerAG/gval"
 )
@@ -34,7 +33,7 @@ func varSelector(variable gval.Evaluable) selector {
 
 		vs, ok := r.(values)
 		if !ok {
-			return nil, fmt.Errorf("expected path variable to return values, but got %T", r)
+			return nil, &VarSelectorTypeError{Variable: r}
 		}
 
 		return vs, nil
